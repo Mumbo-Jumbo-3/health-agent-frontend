@@ -50,7 +50,7 @@ export async function streamChat({
         } else if (line.startsWith("data:")) {
           const data = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
           if (currentEvent === "token") {
-            onToken(data);
+            onToken(data.replace(/\\n/g, "\n"));
           } else if (currentEvent === "done") {
             try {
               const parsed = JSON.parse(data);

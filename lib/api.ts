@@ -48,7 +48,7 @@ export async function streamChat({
         if (line.startsWith("event:")) {
           currentEvent = line.slice(6).trim();
         } else if (line.startsWith("data:")) {
-          const data = line.slice(5).trim();
+          const data = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
           if (currentEvent === "token") {
             onToken(data);
           } else if (currentEvent === "done") {

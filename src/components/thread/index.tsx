@@ -378,11 +378,14 @@ export function Thread() {
               footer={
                 <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-background">
                   {!chatStarted && (
-                    <div className="flex items-center gap-3">
-                      <RootCauseHealthLogo className="h-8 flex-shrink-0" />
+                    <div className="flex flex-col items-center gap-3">
+                      <RootCauseHealthLogo width={64} height={64} />
                       <h1 className="text-2xl font-semibold tracking-tight">
                         Root Cause Health
                       </h1>
+                      <p className="text-muted-foreground text-lg">
+                        Get health knowledge from trusted sources
+                      </p>
                     </div>
                   )}
 

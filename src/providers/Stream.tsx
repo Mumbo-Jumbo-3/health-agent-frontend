@@ -87,7 +87,6 @@ const StreamSession = ({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    streamMode: "values",
     ...(authScheme && {
       defaultHeaders: {
         "X-Auth-Scheme": authScheme,

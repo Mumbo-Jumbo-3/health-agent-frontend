@@ -33,7 +33,7 @@ function CustomComponent({
       {customComponents.map((customComponent) => (
         <LoadExternalComponent
           key={customComponent.id}
-          stream={thread}
+          stream={thread as never}
           message={customComponent}
           meta={{ ui: customComponent, artifact }}
         />

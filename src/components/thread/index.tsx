@@ -28,12 +28,6 @@ import ThreadHistory from "./history";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
-import {
   useArtifactOpen,
   ArtifactContent,
   ArtifactTitle,
@@ -49,11 +43,13 @@ function StickyToBottomContent(props: {
   const context = useStickToBottomContext();
   return (
     <div
+      // eslint-disable-next-line react-hooks/refs -- passing ref object to ref prop, not reading .current
       ref={context.scrollRef}
       style={{ width: "100%", height: "100%" }}
       className={props.className}
     >
       <div
+        // eslint-disable-next-line react-hooks/refs -- passing ref object to ref prop, not reading .current
         ref={context.contentRef}
         className={props.contentClassName}
       >
@@ -92,6 +88,7 @@ export function Thread() {
   );
   const [input, setInput] = useState("");
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
+  const [prevMessageCount, setPrevMessageCount] = useState(0);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
   const stream = useStreamContext();
@@ -137,18 +134,16 @@ export function Thread() {
   }, [stream.error]);
 
   // TODO: this should be part of the useStream hook
-  const prevMessageLength = useRef(0);
-  useEffect(() => {
+  if (messages.length !== prevMessageCount) {
+    setPrevMessageCount(messages.length);
     if (
-      messages.length !== prevMessageLength.current &&
-      messages?.length &&
-      messages[messages.length - 1].type === "ai"
+      messages.length > 0 &&
+      messages[messages.length - 1].type === "ai" &&
+      !firstTokenReceived
     ) {
       setFirstTokenReceived(true);
     }
-
-    prevMessageLength.current = messages.length;
-  }, [messages]);
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -189,8 +184,6 @@ export function Thread() {
   const handleRegenerate = (
     parentCheckpoint: Checkpoint | null | undefined,
   ) => {
-    // Do this so the loading state is correct
-    prevMessageLength.current = prevMessageLength.current - 1;
     setFirstTokenReceived(false);
     stream.submit(undefined, {
       checkpoint: parentCheckpoint,
@@ -386,6 +379,30 @@ export function Thread() {
                       <p className="text-muted-foreground text-lg">
                         Get health knowledge from trusted sources
                       </p>
+                      <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-sm">
+                        <p>
+                          <span>Twitter/X: </span>
+                          <a href="https://x.com/helios_movement" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@helios_movement</a>
+                          {", "}
+                          <a href="https://x.com/grimhood" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@grimhood</a>
+                          {", "}
+                          <a href="https://x.com/aestheticprimal" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@aestheticprimal</a>
+                          {", "}
+                          <a href="https://x.com/hubermanlab" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@hubermanlab</a>
+                          {", "}
+                          <a href="https://x.com/foundmyfitness" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@foundmyfitness</a>
+                          {", "}
+                          <a href="https://x.com/outdoctrination" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@outdoctrination</a>
+                        </p>
+                        <p>
+                          <span>Resources: </span>
+                          <a href="https://fitandball.gumroad.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">George Ferman's Gumroad</a>
+                          {", "}
+                          <a href="https://www.patreon.com/c/grimmsapothecary" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Grimhood's Patreon</a>
+                          {", "}
+                          <a href="https://expulsia.com/health/peat-index" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Ray Peat's Archive</a>
+                        </p>
+                      </div>
                     </div>
                   )}
 

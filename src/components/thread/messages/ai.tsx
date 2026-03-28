@@ -13,6 +13,8 @@ import { isAgentInboxInterruptSchema } from "@/lib/agent-inbox-interrupt";
 import { ThreadView } from "../agent-inbox";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
+import { AnimatePresence, motion } from "framer-motion";
+import { useLoadingStage } from "./loading-stages";
 
 function CustomComponent({
   message,
@@ -203,12 +205,36 @@ export function AssistantMessage({
 }
 
 export function AssistantMessageLoading() {
+  const { currentMessage, progress } = useLoadingStage();
+
   return (
     <div className="mr-auto flex items-start gap-2">
-      <div className="bg-muted flex h-8 items-center gap-1 rounded-2xl px-4 py-2">
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full"></div>
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_0.5s_infinite] rounded-full"></div>
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_1s_infinite] rounded-full"></div>
+      <div className="bg-muted flex max-w-xs flex-col gap-2 rounded-2xl px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full" />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={currentMessage}
+              className="text-muted-foreground text-sm"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              {currentMessage}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+        <div className="bg-muted-foreground/20 h-1 w-full overflow-hidden rounded-full">
+          <motion.div
+            className="bg-primary relative h-full rounded-full"
+            initial={{ width: "5%" }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <div className="absolute inset-0 animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+          </motion.div>
+        </div>
       </div>
     </div>
   );

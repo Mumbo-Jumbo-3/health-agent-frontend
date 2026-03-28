@@ -330,7 +330,7 @@ export function Thread() {
             <StickyToBottomContent
               className={cn(
                 "absolute inset-0 overflow-y-scroll px-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent",
-                !chatStarted && "mt-[25vh] flex flex-col items-stretch",
+                !chatStarted && "flex flex-col items-stretch justify-center",
                 chatStarted && "grid grid-rows-[1fr_auto]",
               )}
               contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
@@ -379,7 +379,7 @@ export function Thread() {
                 </>
               }
               footer={
-                <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-background">
+                <div className={cn("flex flex-col items-center gap-8 bg-background", chatStarted && "sticky bottom-0")}>
                   {!chatStarted && (
                     <div className="flex flex-col items-center gap-6">
                       <div className="flex flex-col items-center gap-3">
@@ -387,10 +387,10 @@ export function Thread() {
                         <h1 className="text-2xl font-semibold tracking-tight">
                           Root Cause Health
                         </h1>
-                        <p className="text-muted-foreground text-lg">
+                        <p className="text-muted-foreground text-center text-lg">
                           Get health knowledge from trusted sources
                         </p>
-                        <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-base">
+                        <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-center text-base">
                           <p>
                             <span>Resources: </span>
                             <a href="https://expulsia.com/health/peat-index" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Ray Peat</a>

@@ -392,7 +392,7 @@ export function Thread() {
                         </p>
                         <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-center text-base">
                           <p>
-                            <span>Resources: </span>
+                            <span>Sources: </span>
                             <a href="https://expulsia.com/health/peat-index" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Ray Peat</a>
                             {", "}
                             <a href="https://x.com/helios_movement" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@helios_movement</a>

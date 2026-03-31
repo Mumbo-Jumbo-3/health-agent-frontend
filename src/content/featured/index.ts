@@ -24,7 +24,7 @@ export const featuredQueries: FeaturedQueryMeta[] = [
   {
     slug: "stress-reduction",
     query: "Stress",
-    description: "best ways to reduce stress and increase my ability to handle stress",
+    description: "best ways to increase my ability to handle stress",
     shareLinks: {},
   },
 ];

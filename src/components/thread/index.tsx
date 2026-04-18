@@ -19,9 +19,11 @@ import {
   LoaderCircle,
   PanelRightOpen,
   PanelRightClose,
+  Share2,
   SquarePen,
   XIcon,
 } from "lucide-react";
+import { getContentString } from "./utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import ThreadHistory from "./history";
@@ -90,6 +92,7 @@ export function Thread() {
   const [input, setInput] = useState("");
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   const [prevMessageCount, setPrevMessageCount] = useState(0);
+  const [sharing, setSharing] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
   const stream = useStreamContext();
@@ -191,6 +194,37 @@ export function Thread() {
       streamMode: ["values"],
       streamResumable: true,
     });
+  };
+
+  const handleShare = async () => {
+    if (!threadId || sharing) return;
+    const firstHuman = messages.find((m) => m.type === "human");
+    const firstMessage = firstHuman ? getContentString(firstHuman.content) : "";
+    const title = firstMessage.slice(0, 80) || "Health conversation";
+
+    setSharing(true);
+    try {
+      const res = await fetch("/api/share-create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          thread_id: threadId,
+          title,
+          first_message: firstMessage,
+        }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const { share_id } = (await res.json()) as { share_id: string };
+      const url = `${window.location.origin}/share/${share_id}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Share link copied", { description: url });
+    } catch (err) {
+      toast.error("Could not create share link", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setSharing(false);
+    }
   };
 
   const chatStarted = !!threadId || !!messages.length;
@@ -311,6 +345,22 @@ export function Thread() {
               </div>
 
               <div className="flex items-center gap-4">
+                {threadId && (
+                  <TooltipIconButton
+                    size="lg"
+                    className="p-4"
+                    tooltip="Copy share link"
+                    variant="ghost"
+                    disabled={sharing}
+                    onClick={handleShare}
+                  >
+                    {sharing ? (
+                      <LoaderCircle className="size-5 animate-spin" />
+                    ) : (
+                      <Share2 className="size-5" />
+                    )}
+                  </TooltipIconButton>
+                )}
                 <TooltipIconButton
                   size="lg"
                   className="p-4"

@@ -12,8 +12,24 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
   title: "Root Cause Health",
   description: "AI health agent by Root Cause Health",
+  openGraph: {
+    siteName: "Root Cause Health",
+    type: "website",
+    title: "Root Cause Health",
+    description: "AI health agent by Root Cause Health",
+    images: [{ url: "/logo.png", width: 512, height: 512 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Root Cause Health",
+    description: "AI health agent by Root Cause Health",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({

@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
@@ -24,13 +26,22 @@ async function fetchShare(id: string): Promise<ShareRow | null> {
   }
 }
 
+async function loadLogoDataUrl(): Promise<string | null> {
+  try {
+    const buf = await readFile(path.join(process.cwd(), "public", "logo.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function OpengraphImage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const row = await fetchShare(id);
+  const [row, logoDataUrl] = await Promise.all([fetchShare(id), loadLogoDataUrl()]);
   const title = row?.title?.trim() || "Root Cause Health";
   const snippet = (row?.first_message ?? "").slice(0, 180);
 
@@ -58,14 +69,25 @@ export default async function OpengraphImage({
             color: "#a3a3a3",
           }}
         >
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: "#10b981",
-            }}
-          />
+          {logoDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoDataUrl}
+              width={48}
+              height={48}
+              alt=""
+              style={{ borderRadius: 10 }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 10,
+                background: "#10b981",
+              }}
+            />
+          )}
           <span>Root Cause Health</span>
         </div>
 

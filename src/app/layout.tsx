@@ -4,6 +4,8 @@ import { DM_Sans } from "next/font/google";
 import React from "react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "next-themes";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/ui/themes";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -40,9 +42,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={dmSans.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
-          <NuqsAdapter>{children}</NuqsAdapter>
-        </ThemeProvider>
+        <ClerkProvider
+          appearance={{ theme: dark }}
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        >
+          <ThemeProvider attribute="class" defaultTheme="dark">
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

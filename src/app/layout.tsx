@@ -6,6 +6,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "next-themes";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/ui/themes";
+import { clerkLocalization } from "@/lib/clerk-localization";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -44,8 +45,9 @@ export default function RootLayout({
       <body className={dmSans.className}>
         <ClerkProvider
           appearance={{ theme: dark }}
-          signInUrl="/sign-in"
-          signUpUrl="/sign-up"
+          localization={clerkLocalization}
+          signInUrl="/login"
+          signUpUrl="/register"
           signInFallbackRedirectUrl="/"
           signUpFallbackRedirectUrl="/"
         >

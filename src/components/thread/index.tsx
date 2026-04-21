@@ -303,6 +303,9 @@ export function Thread() {
                   </Button>
                 )}
               </div>
+              <div className="flex items-center gap-4 pr-2">
+                <UserButton />
+              </div>
             </div>
           )}
           {chatStarted && (

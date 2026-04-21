@@ -1,4 +1,4 @@
-import type { Message } from "@langchain/langgraph-sdk";
+import type { Message } from "@/lib/agent-types";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/ensure-tool-responses";
 import { MarkdownText } from "../markdown-text";
 import { getContentString } from "../utils";

@@ -1,15 +1,16 @@
-import { validate } from "uuid";
-import { Thread } from "@langchain/langgraph-sdk";
+"use client";
+
 import {
   createContext,
-  useContext,
-  ReactNode,
   useCallback,
+  useContext,
   useState,
+  ReactNode,
   Dispatch,
   SetStateAction,
 } from "react";
-import { createClient } from "./client";
+
+import type { Thread } from "@/lib/agent-types";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -21,37 +22,23 @@ interface ThreadContextType {
 
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
 
-function getThreadSearchMetadata(
-  assistantId: string,
-): { graph_id: string } | { assistant_id: string } {
-  if (validate(assistantId)) {
-    return { assistant_id: assistantId };
-  } else {
-    return { graph_id: assistantId };
-  }
-}
-
 export function ThreadProvider({ children }: { children: ReactNode }) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const assistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID;
-  const authScheme = process.env.NEXT_PUBLIC_AUTH_SCHEME;
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
-    if (!apiUrl || !assistantId) return [];
-    const client = createClient(apiUrl, authScheme || undefined);
-
-    const threads = await client.threads.search({
-      metadata: {
-        ...getThreadSearchMetadata(assistantId),
-      },
-      limit: 100,
+    if (!apiUrl) return [];
+    const res = await fetch(`${apiUrl}/threads/search`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ limit: 100 }),
+      cache: "no-store",
     });
-
-    return threads;
-  }, [apiUrl, assistantId, authScheme]);
+    if (!res.ok) return [];
+    return (await res.json()) as Thread[];
+  }, [apiUrl]);
 
   const value = {
     getThreads,

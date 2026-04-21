@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { toast } from "sonner";
-import { ContentBlock } from "@langchain/core/messages";
+import type { MultimodalDataBlock } from "@/lib/agent-types";
 import { fileToContentBlock } from "@/lib/multimodal-utils";
 
 export const SUPPORTED_FILE_TYPES = [
@@ -12,19 +12,19 @@ export const SUPPORTED_FILE_TYPES = [
 ];
 
 interface UseFileUploadOptions {
-  initialBlocks?: ContentBlock.Multimodal.Data[];
+  initialBlocks?: MultimodalDataBlock[];
 }
 
 export function useFileUpload({
   initialBlocks = [],
 }: UseFileUploadOptions = {}) {
   const [contentBlocks, setContentBlocks] =
-    useState<ContentBlock.Multimodal.Data[]>(initialBlocks);
+    useState<MultimodalDataBlock[]>(initialBlocks);
   const dropRef = useRef<HTMLDivElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const dragCounter = useRef(0);
 
-  const isDuplicate = (file: File, blocks: ContentBlock.Multimodal.Data[]) => {
+  const isDuplicate = (file: File, blocks: MultimodalDataBlock[]) => {
     if (file.type === "application/pdf") {
       return blocks.some(
         (b) =>

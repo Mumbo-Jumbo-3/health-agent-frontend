@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useThreads } from "@/providers/Thread";
-import { Thread } from "@langchain/langgraph-sdk";
+import type { Thread } from "@/lib/agent-types";
 import { useEffect } from "react";
 
 import { getContentString } from "../utils";

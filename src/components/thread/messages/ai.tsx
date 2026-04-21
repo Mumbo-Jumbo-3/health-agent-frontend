@@ -1,137 +1,109 @@
-import { parsePartialJson } from "@langchain/core/output_parsers";
-import { useStreamContext } from "@/providers/Stream";
-import { AIMessage, Checkpoint, Message } from "@langchain/langgraph-sdk";
-import { getContentString } from "../utils";
-import { BranchSwitcher, CommandBar } from "./shared";
-import { MarkdownText } from "../markdown-text";
-import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
-import { cn } from "@/lib/utils";
-import { ToolCalls, ToolResult } from "./tool-calls";
-import { MessageContentComplex } from "@langchain/core/messages";
-import { Fragment } from "react/jsx-runtime";
-import { isAgentInboxInterruptSchema } from "@/lib/agent-inbox-interrupt";
-import { ThreadView } from "../agent-inbox";
-import { GenericInterruptView } from "./generic-interrupt";
-import { useArtifact } from "../artifact";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Copy, CopyCheck } from "lucide-react";
+
+import type { AIMessage, Message, MessageContentBlock } from "@/lib/agent-types";
+import { cn } from "@/lib/utils";
+import { getContentString } from "../utils";
+import { MarkdownText } from "../markdown-text";
+import { TooltipIconButton } from "../tooltip-icon-button";
+import { ToolCalls, ToolResult } from "./tool-calls";
 import { useLoadingStage } from "./loading-stages";
 
-function CustomComponent({
-  message,
-  thread,
-}: {
-  message: Message;
-  thread: ReturnType<typeof useStreamContext>;
-}) {
-  const artifact = useArtifact();
-  const { values } = useStreamContext();
-  const customComponents = values.ui?.filter(
-    (ui) => ui.metadata?.message_id === message.id,
-  );
-
-  if (!customComponents?.length) return null;
-  return (
-    <Fragment key={message.id}>
-      {customComponents.map((customComponent) => (
-        <LoadExternalComponent
-          key={customComponent.id}
-          stream={thread as never}
-          message={customComponent}
-          meta={{ ui: customComponent, artifact }}
-        />
-      ))}
-    </Fragment>
-  );
-}
-
 function parseAnthropicStreamedToolCalls(
-  content: MessageContentComplex[],
+  content: MessageContentBlock[],
 ): AIMessage["tool_calls"] {
-  const toolCallContents = content.filter((c) => c.type === "tool_use" && c.id);
+  const toolCallContents = content.filter(
+    (c): c is MessageContentBlock & { type: "tool_use" } =>
+      c.type === "tool_use" && !!(c as { id?: string }).id,
+  );
 
   return toolCallContents.map((tc) => {
-    const toolCall = tc as Record<string, any>;
-    let json: Record<string, any> = {};
-    if (toolCall?.input) {
-      try {
-        json = parsePartialJson(toolCall.input) ?? {};
-      } catch {
-        // Pass
-      }
+    const toolCall = tc as Record<string, unknown>;
+    const input = toolCall.input;
+    let args: Record<string, unknown> = {};
+    if (input && typeof input === "object") {
+      args = input as Record<string, unknown>;
     }
     return {
-      name: toolCall.name ?? "",
-      id: toolCall.id ?? "",
-      args: json,
-      type: "tool_call",
+      name: (toolCall.name as string | undefined) ?? "",
+      id: (toolCall.id as string | undefined) ?? "",
+      args,
+      type: "tool_call" as const,
     };
   });
 }
 
-interface InterruptProps {
-  interrupt?: unknown;
-  isLastMessage: boolean;
-  hasNoAIOrToolMessages: boolean;
-}
+function CopyButton({ content, disabled }: { content: string; disabled: boolean }) {
+  const [copied, setCopied] = useState(false);
 
-function Interrupt({
-  interrupt,
-  isLastMessage,
-  hasNoAIOrToolMessages,
-}: InterruptProps) {
-  const fallbackValue = Array.isArray(interrupt)
-    ? (interrupt as Record<string, any>[])
-    : (((interrupt as { value?: unknown } | undefined)?.value ??
-        interrupt) as Record<string, any>);
+  const handleCopy = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <>
-      {isAgentInboxInterruptSchema(interrupt) &&
-        (isLastMessage || hasNoAIOrToolMessages) && (
-          <ThreadView interrupt={interrupt} />
+    <TooltipIconButton
+      onClick={handleCopy}
+      variant="ghost"
+      tooltip="Copy content"
+      disabled={disabled}
+    >
+      <AnimatePresence
+        mode="wait"
+        initial={false}
+      >
+        {copied ? (
+          <motion.div
+            key="check"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <CopyCheck className="text-green-500" />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="copy"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <Copy />
+          </motion.div>
         )}
-      {interrupt &&
-      !isAgentInboxInterruptSchema(interrupt) &&
-      (isLastMessage || hasNoAIOrToolMessages) ? (
-        <GenericInterruptView interrupt={fallbackValue} />
-      ) : null}
-    </>
+      </AnimatePresence>
+    </TooltipIconButton>
   );
 }
 
 export function AssistantMessage({
   message,
   isLoading,
-  handleRegenerate,
 }: {
   message: Message | undefined;
   isLoading: boolean;
-  handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
 }) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);
-  const thread = useStreamContext();
-  const isLastMessage =
-    thread.messages[thread.messages.length - 1].id === message?.id;
-  const hasNoAIOrToolMessages = !thread.messages.find(
-    (m) => m.type === "ai" || m.type === "tool",
-  );
-  const meta = message ? thread.getMessagesMetadata(message) : undefined;
-  const threadInterrupt = thread.interrupt;
 
-  const parentCheckpoint = meta?.firstSeenState?.parent_checkpoint;
   const anthropicStreamedToolCalls = Array.isArray(content)
-    ? parseAnthropicStreamedToolCalls(content)
+    ? parseAnthropicStreamedToolCalls(content as MessageContentBlock[])
     : undefined;
 
   const hasToolCalls =
     message &&
+    message.type === "ai" &&
     "tool_calls" in message &&
     message.tool_calls &&
     message.tool_calls.length > 0;
   const toolCallsHaveContents =
     hasToolCalls &&
-    message.tool_calls?.some(
+    (message as AIMessage).tool_calls?.some(
       (tc) => tc.args && Object.keys(tc.args).length > 0,
     );
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
@@ -141,14 +113,7 @@ export function AssistantMessage({
     <div className="group mr-auto flex w-full items-start gap-2">
       <div className="flex w-full flex-col gap-2">
         {isToolResult ? (
-          <>
-            <ToolResult message={message} />
-            <Interrupt
-              interrupt={threadInterrupt}
-              isLastMessage={isLastMessage}
-              hasNoAIOrToolMessages={hasNoAIOrToolMessages}
-            />
-          </>
+          <ToolResult message={message} />
         ) : (
           <>
             {contentString.length > 0 && (
@@ -158,43 +123,24 @@ export function AssistantMessage({
             )}
 
             {(hasToolCalls && toolCallsHaveContents && (
-              <ToolCalls toolCalls={message.tool_calls} />
+              <ToolCalls toolCalls={(message as AIMessage).tool_calls} />
             )) ||
               (hasAnthropicToolCalls && (
                 <ToolCalls toolCalls={anthropicStreamedToolCalls} />
               )) ||
               (hasToolCalls && (
-                <ToolCalls toolCalls={message.tool_calls} />
+                <ToolCalls toolCalls={(message as AIMessage).tool_calls} />
               ))}
 
-            {message && (
-              <CustomComponent
-                message={message}
-                thread={thread}
-              />
-            )}
-            <Interrupt
-              interrupt={threadInterrupt}
-              isLastMessage={isLastMessage}
-              hasNoAIOrToolMessages={hasNoAIOrToolMessages}
-            />
             <div
               className={cn(
                 "mr-auto flex items-center gap-2 transition-opacity",
                 "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
               )}
             >
-              <BranchSwitcher
-                branch={meta?.branch}
-                branchOptions={meta?.branchOptions}
-                onSelect={(branch) => thread.setBranch(branch)}
-                isLoading={isLoading}
-              />
-              <CommandBar
+              <CopyButton
                 content={contentString}
-                isLoading={isLoading}
-                isAiMessage={true}
-                handleRegenerate={() => handleRegenerate(parentCheckpoint)}
+                disabled={isLoading}
               />
             </div>
           </>
@@ -212,7 +158,10 @@ export function AssistantMessageLoading() {
       <div className="bg-muted flex max-w-xs flex-col gap-2 rounded-2xl px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full" />
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence
+            mode="wait"
+            initial={false}
+          >
             <motion.span
               key={currentMessage}
               className="text-muted-foreground text-sm"

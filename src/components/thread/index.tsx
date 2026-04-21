@@ -5,13 +5,10 @@ import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
 import { Button } from "../ui/button";
-import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { AssistantMessage, AssistantMessageLoading } from "./messages/ai";
 import { HumanMessage } from "./messages/human";
-import {
-  DO_NOT_RENDER_ID_PREFIX,
-  ensureToolCallsHaveResponses,
-} from "@/lib/ensure-tool-responses";
+import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/ensure-tool-responses";
+import type { Message } from "@/lib/agent-types";
 import { RootCauseHealthLogo } from "../icons/root-cause-health";
 import { TooltipIconButton } from "./tooltip-icon-button";
 import {
@@ -21,7 +18,6 @@ import {
   PanelRightClose,
   Share2,
   SquarePen,
-  XIcon,
 } from "lucide-react";
 import { getContentString } from "./utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
@@ -30,12 +26,6 @@ import ThreadHistory from "./history";
 import { FeaturedShowcase } from "../featured/showcase";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import {
-  useArtifactOpen,
-  ArtifactContent,
-  ArtifactTitle,
-  useArtifactContext,
-} from "./artifact";
 import { UserButton } from "@clerk/nextjs";
 
 function StickyToBottomContent(props: {
@@ -82,10 +72,7 @@ function ScrollToBottom(props: { className?: string }) {
 }
 
 export function Thread() {
-  const [artifactContext, setArtifactContext] = useArtifactContext();
-  const [artifactOpen, closeArtifact] = useArtifactOpen();
-
-  const [threadId, _setThreadId] = useQueryState("threadId");
+  const [threadId, setThreadId] = useQueryState("threadId");
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false),
@@ -102,27 +89,14 @@ export function Thread() {
 
   const lastError = useRef<string | undefined>(undefined);
 
-  const setThreadId = (id: string | null) => {
-    _setThreadId(id);
-
-    // close artifact and reset artifact context
-    closeArtifact();
-    setArtifactContext({});
-  };
-
   useEffect(() => {
     if (!stream.error) {
       lastError.current = undefined;
       return;
     }
     try {
-      const message = (stream.error as any).message;
-      if (!message || lastError.current === message) {
-        // Message has already been logged. do not modify ref, return early.
-        return;
-      }
-
-      // Message is defined, and it has not been logged yet. Save it, and send the error
+      const message = (stream.error as Error).message;
+      if (!message || lastError.current === message) return;
       lastError.current = message;
       toast.error("An error occurred. Please try again.", {
         description: (
@@ -138,7 +112,6 @@ export function Thread() {
     }
   }, [stream.error]);
 
-  // TODO: this should be part of the useStream hook
   if (messages.length !== prevMessageCount) {
     setPrevMessageCount(messages.length);
     if (
@@ -161,40 +134,16 @@ export function Thread() {
       content: input,
     };
 
-    const toolMessages = ensureToolCallsHaveResponses(stream.messages);
-
-    const context =
-      Object.keys(artifactContext).length > 0 ? artifactContext : undefined;
-
     stream.submit(
-      { messages: [...toolMessages, newHumanMessage], context },
+      { messages: [newHumanMessage] },
       {
-        streamMode: ["values"],
-        streamResumable: true,
         optimisticValues: (prev) => ({
-          ...prev,
-          context,
-          messages: [
-            ...(prev.messages ?? []),
-            ...toolMessages,
-            newHumanMessage,
-          ],
+          messages: [...(prev.messages ?? []), newHumanMessage],
         }),
       },
     );
 
     setInput("");
-  };
-
-  const handleRegenerate = (
-    parentCheckpoint: Checkpoint | null | undefined,
-  ) => {
-    setFirstTokenReceived(false);
-    stream.submit(undefined, {
-      checkpoint: parentCheckpoint,
-      streamMode: ["values"],
-      streamResumable: true,
-    });
   };
 
   const handleShare = async () => {
@@ -229,9 +178,6 @@ export function Thread() {
   };
 
   const chatStarted = !!threadId || !!messages.length;
-  const hasNoAIOrToolMessages = !messages.find(
-    (m) => m.type === "ai" || m.type === "tool",
-  );
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
@@ -260,35 +206,52 @@ export function Thread() {
         </motion.div>
       </div>
 
-      <div
+      <motion.div
         className={cn(
-          "grid w-full grid-cols-[1fr_0fr] transition-all duration-500",
-          artifactOpen && "grid-cols-[3fr_2fr]",
+          "relative flex min-w-0 flex-1 flex-col overflow-hidden",
+          !chatStarted && "grid-rows-[1fr]",
         )}
+        layout={isLargeScreen}
+        animate={{
+          marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
+          width: chatHistoryOpen
+            ? isLargeScreen
+              ? "calc(100% - 300px)"
+              : "100%"
+            : "100%",
+        }}
+        transition={
+          isLargeScreen
+            ? { type: "spring", stiffness: 300, damping: 30 }
+            : { duration: 0 }
+        }
       >
-        <motion.div
-          className={cn(
-            "relative flex min-w-0 flex-1 flex-col overflow-hidden",
-            !chatStarted && "grid-rows-[1fr]",
-          )}
-          layout={isLargeScreen}
-          animate={{
-            marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-            width: chatHistoryOpen
-              ? isLargeScreen
-                ? "calc(100% - 300px)"
-                : "100%"
-              : "100%",
-          }}
-          transition={
-            isLargeScreen
-              ? { type: "spring", stiffness: 300, damping: 30 }
-              : { duration: 0 }
-          }
-        >
-          {!chatStarted && (
-            <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
-              <div>
+        {!chatStarted && (
+          <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
+            <div>
+              {(!chatHistoryOpen || !isLargeScreen) && (
+                <Button
+                  className="hover:bg-accent"
+                  variant="ghost"
+                  onClick={() => setChatHistoryOpen((p) => !p)}
+                >
+                  {chatHistoryOpen ? (
+                    <PanelRightOpen className="size-5" />
+                  ) : (
+                    <PanelRightClose className="size-5" />
+                  )}
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-4 pr-2">
+              <UserButton />
+            </div>
+          </div>
+        )}
+        {chatStarted && (
+          <div className="relative z-10 flex items-center justify-between gap-3 p-2">
+            <div className="relative flex items-center justify-start gap-2">
+              <div className="absolute left-0 z-10">
                 {(!chatHistoryOpen || !isLargeScreen) && (
                   <Button
                     className="hover:bg-accent"
@@ -303,246 +266,249 @@ export function Thread() {
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-4 pr-2">
-                <UserButton />
-              </div>
+              <motion.button
+                className="flex cursor-pointer items-center gap-2"
+                onClick={() => setThreadId(null)}
+                animate={{
+                  marginLeft: !chatHistoryOpen ? 48 : 0,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                }}
+              >
+                <RootCauseHealthLogo
+                  width={32}
+                  height={32}
+                />
+                <span className="text-xl font-semibold tracking-tight">
+                  Root Cause Health
+                </span>
+              </motion.button>
             </div>
-          )}
-          {chatStarted && (
-            <div className="relative z-10 flex items-center justify-between gap-3 p-2">
-              <div className="relative flex items-center justify-start gap-2">
-                <div className="absolute left-0 z-10">
-                  {(!chatHistoryOpen || !isLargeScreen) && (
-                    <Button
-                      className="hover:bg-accent"
-                      variant="ghost"
-                      onClick={() => setChatHistoryOpen((p) => !p)}
-                    >
-                      {chatHistoryOpen ? (
-                        <PanelRightOpen className="size-5" />
-                      ) : (
-                        <PanelRightClose className="size-5" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <motion.button
-                  className="flex cursor-pointer items-center gap-2"
-                  onClick={() => setThreadId(null)}
-                  animate={{
-                    marginLeft: !chatHistoryOpen ? 48 : 0,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                >
-                  <RootCauseHealthLogo
-                    width={32}
-                    height={32}
-                  />
-                  <span className="text-xl font-semibold tracking-tight">
-                    Root Cause Health
-                  </span>
-                </motion.button>
-              </div>
 
-              <div className="flex items-center gap-4">
-                {threadId && (
-                  <TooltipIconButton
-                    size="lg"
-                    className="p-4"
-                    tooltip="Copy share link"
-                    variant="ghost"
-                    disabled={sharing}
-                    onClick={handleShare}
-                  >
-                    {sharing ? (
-                      <LoaderCircle className="size-5 animate-spin" />
-                    ) : (
-                      <Share2 className="size-5" />
-                    )}
-                  </TooltipIconButton>
-                )}
+            <div className="flex items-center gap-4">
+              {threadId && (
                 <TooltipIconButton
                   size="lg"
                   className="p-4"
-                  tooltip="New thread"
+                  tooltip="Copy share link"
                   variant="ghost"
-                  onClick={() => setThreadId(null)}
+                  disabled={sharing}
+                  onClick={handleShare}
                 >
-                  <SquarePen className="size-5" />
+                  {sharing ? (
+                    <LoaderCircle className="size-5 animate-spin" />
+                  ) : (
+                    <Share2 className="size-5" />
+                  )}
                 </TooltipIconButton>
-                <UserButton />
-              </div>
-
-              <div className="from-background to-background/0 absolute inset-x-0 top-full h-5 bg-gradient-to-b" />
-            </div>
-          )}
-
-          <StickToBottom className="relative flex-1 overflow-hidden">
-            <StickyToBottomContent
-              className={cn(
-                "absolute inset-0 overflow-y-scroll px-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent",
-                !chatStarted && "flex flex-col items-stretch justify-center",
-                chatStarted && "grid grid-rows-[1fr_auto]",
               )}
-              contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
-              content={
-                <>
-                  {messages
-                    .filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX))
-                    .map((message, index) =>
-                      message.type === "human" ? (
-                        <HumanMessage
-                          key={message.id || `${message.type}-${index}`}
-                          message={message}
-                          isLoading={isLoading}
-                        />
-                      ) : (
-                        <AssistantMessage
-                          key={message.id || `${message.type}-${index}`}
-                          message={message}
-                          isLoading={isLoading}
-                          handleRegenerate={handleRegenerate}
-                        />
-                      ),
-                    )}
-                  {/* Special rendering case where there are no AI/tool messages, but there is an interrupt.
-                    We need to render it outside of the messages list, since there are no messages to render */}
-                  {hasNoAIOrToolMessages && !!stream.interrupt && (
-                    <AssistantMessage
-                      key="interrupt-msg"
-                      message={undefined}
-                      isLoading={isLoading}
-                      handleRegenerate={handleRegenerate}
-                    />
-                  )}
-                  <AnimatePresence>
-                    {isLoading && !firstTokenReceived && (
-                      <motion.div
-                        key="loading"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                      >
-                        <AssistantMessageLoading />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
-              }
-              footer={
-                <div className={cn("flex flex-col items-center gap-8 bg-background", chatStarted && "sticky bottom-0")}>
-                  {!chatStarted && (
-                    <div className="flex flex-col items-center gap-6">
-                      <div className="flex flex-col items-center gap-3">
-                        <RootCauseHealthLogo width={64} height={64} />
-                        <h1 className="text-2xl font-semibold tracking-tight">
-                          Root Cause Health
-                        </h1>
-                        <p className="text-muted-foreground text-center text-lg">
-                          Get health knowledge from trusted sources
-                        </p>
-                        <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-center text-base">
-                          <p>
-                            <span>Sources: </span>
-                            <a href="https://expulsia.com/health/peat-index" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Ray Peat</a>
-                            {", "}
-                            <a href="https://x.com/helios_movement" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@helios_movement</a>
-                            {", "}
-                            <a href="https://x.com/grimhood" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@grimhood</a>
-                            {", "}
-                            <a href="https://x.com/aestheticprimal" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@aestheticprimal</a>
-                            {", "}
-                            <a href="https://x.com/hubermanlab" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@hubermanlab</a>
-                            {", "}
-                            <a href="https://x.com/foundmyfitness" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@foundmyfitness</a>
-                            {", "}
-                            <a href="https://x.com/outdoctrination" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">@outdoctrination</a>
-                          </p>
-                        </div>
-                      </div>
-
-                      <FeaturedShowcase />
-                    </div>
-                  )}
-
-                  <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
-
-                  <div
-                    className="bg-muted relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-2xl border border-solid shadow-xs transition-all"
-                  >
-                    <form
-                      onSubmit={handleSubmit}
-                      className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2"
-                    >
-                      <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (
-                            e.key === "Enter" &&
-                            !e.shiftKey &&
-                            !e.metaKey &&
-                            !e.nativeEvent.isComposing
-                          ) {
-                            e.preventDefault();
-                            const el = e.target as HTMLElement | undefined;
-                            const form = el?.closest("form");
-                            form?.requestSubmit();
-                          }
-                        }}
-                        placeholder="Type your message..."
-                        className="field-sizing-content resize-none border-none bg-transparent p-3.5 pb-0 shadow-none ring-0 outline-none focus:ring-0 focus:outline-none"
-                      />
-
-                      <div className="flex items-center gap-6 p-2 pt-4">
-                        {stream.isLoading ? (
-                          <Button
-                            key="stop"
-                            onClick={() => stream.stop()}
-                            className="ml-auto"
-                          >
-                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                            Cancel
-                          </Button>
-                        ) : (
-                          <Button
-                            type="submit"
-                            className="ml-auto shadow-md transition-all"
-                            disabled={
-                              isLoading ||
-                              !input.trim()
-                            }
-                          >
-                            Send
-                          </Button>
-                        )}
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              }
-            />
-          </StickToBottom>
-        </motion.div>
-        <div className="relative flex flex-col border-l">
-          <div className="absolute inset-0 flex min-w-[30vw] flex-col">
-            <div className="grid grid-cols-[1fr_auto] border-b p-4">
-              <ArtifactTitle className="truncate overflow-hidden" />
-              <button
-                onClick={closeArtifact}
-                className="cursor-pointer"
+              <TooltipIconButton
+                size="lg"
+                className="p-4"
+                tooltip="New thread"
+                variant="ghost"
+                onClick={() => setThreadId(null)}
               >
-                <XIcon className="size-5" />
-              </button>
+                <SquarePen className="size-5" />
+              </TooltipIconButton>
+              <UserButton />
             </div>
-            <ArtifactContent className="relative flex-grow" />
+
+            <div className="from-background to-background/0 absolute inset-x-0 top-full h-5 bg-gradient-to-b" />
           </div>
-        </div>
-      </div>
+        )}
+
+        <StickToBottom className="relative flex-1 overflow-hidden">
+          <StickyToBottomContent
+            className={cn(
+              "absolute inset-0 overflow-y-scroll px-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent",
+              !chatStarted && "flex flex-col items-stretch justify-center",
+              chatStarted && "grid grid-rows-[1fr_auto]",
+            )}
+            contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
+            content={
+              <>
+                {messages
+                  .filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX))
+                  .map((message, index) =>
+                    message.type === "human" ? (
+                      <HumanMessage
+                        key={message.id || `${message.type}-${index}`}
+                        message={message}
+                        isLoading={isLoading}
+                      />
+                    ) : (
+                      <AssistantMessage
+                        key={message.id || `${message.type}-${index}`}
+                        message={message}
+                        isLoading={isLoading}
+                      />
+                    ),
+                  )}
+                <AnimatePresence>
+                  {isLoading && !firstTokenReceived && (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                    >
+                      <AssistantMessageLoading />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            }
+            footer={
+              <div
+                className={cn(
+                  "flex flex-col items-center gap-8 bg-background",
+                  chatStarted && "sticky bottom-0",
+                )}
+              >
+                {!chatStarted && (
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="flex flex-col items-center gap-3">
+                      <RootCauseHealthLogo
+                        width={64}
+                        height={64}
+                      />
+                      <h1 className="text-2xl font-semibold tracking-tight">
+                        Root Cause Health
+                      </h1>
+                      <p className="text-muted-foreground text-center text-lg">
+                        Get health knowledge from trusted sources
+                      </p>
+                      <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-center text-base">
+                        <p>
+                          <span>Sources: </span>
+                          <a
+                            href="https://expulsia.com/health/peat-index"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            Ray Peat
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/helios_movement"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @helios_movement
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/grimhood"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @grimhood
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/aestheticprimal"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @aestheticprimal
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/hubermanlab"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @hubermanlab
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/foundmyfitness"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @foundmyfitness
+                          </a>
+                          {", "}
+                          <a
+                            href="https://x.com/outdoctrination"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            @outdoctrination
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+
+                    <FeaturedShowcase />
+                  </div>
+                )}
+
+                <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
+
+                <div className="bg-muted relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-2xl border border-solid shadow-xs transition-all">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2"
+                  >
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          !e.shiftKey &&
+                          !e.metaKey &&
+                          !e.nativeEvent.isComposing
+                        ) {
+                          e.preventDefault();
+                          const el = e.target as HTMLElement | undefined;
+                          const form = el?.closest("form");
+                          form?.requestSubmit();
+                        }
+                      }}
+                      placeholder="Type your message..."
+                      className="field-sizing-content resize-none border-none bg-transparent p-3.5 pb-0 shadow-none ring-0 outline-none focus:ring-0 focus:outline-none"
+                    />
+
+                    <div className="flex items-center gap-6 p-2 pt-4">
+                      {stream.isLoading ? (
+                        <Button
+                          key="stop"
+                          onClick={() => stream.stop()}
+                          className="ml-auto"
+                        >
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                          Cancel
+                        </Button>
+                      ) : (
+                        <Button
+                          type="submit"
+                          className="ml-auto shadow-md transition-all"
+                          disabled={isLoading || !input.trim()}
+                        >
+                          Send
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              </div>
+            }
+          />
+        </StickToBottom>
+      </motion.div>
     </div>
   );
 }

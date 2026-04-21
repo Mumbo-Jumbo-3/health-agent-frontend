@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Client, Message } from "@langchain/langgraph-sdk";
 import { ReadOnlyMessages } from "@/components/thread/messages/read-only";
 import { RootCauseHealthLogo } from "@/components/icons/root-cause-health";
+import type { Message } from "@/lib/agent-types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -63,16 +63,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-async function fetchMessages(threadId: string): Promise<Message[] | null> {
+async function fetchMessages(shareId: string): Promise<Message[] | null> {
   const apiUrl = process.env.LANGGRAPH_API_URL;
-  const apiKey = process.env.LANGSMITH_API_KEY ?? "";
   if (!apiUrl) return null;
 
   try {
-    const client = new Client({ apiUrl, apiKey });
-    const state = await client.threads.getState(threadId);
-    const values = state.values as { messages?: Message[] } | undefined;
-    return values?.messages ?? [];
+    const res = await fetch(new URL(`/share/${shareId}/state`, apiUrl), {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const state = (await res.json()) as {
+      values?: { messages?: Message[] };
+    };
+    return state.values?.messages ?? [];
   } catch {
     return null;
   }
@@ -83,7 +86,7 @@ export default async function SharePage({ params }: PageProps) {
   const row = await fetchShare(id);
   if (!row) notFound();
 
-  const messages = await fetchMessages(row.thread_id);
+  const messages = await fetchMessages(id);
   if (!messages) notFound();
 
   return (

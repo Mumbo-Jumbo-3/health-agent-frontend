@@ -1,103 +1,306 @@
+"use client";
+
 import React, {
   createContext,
+  useCallback,
   useContext,
-  ReactNode,
   useEffect,
+  useRef,
+  useState,
+  ReactNode,
 } from "react";
-import { useStream } from "@langchain/langgraph-sdk/react";
-import { type Message } from "@langchain/langgraph-sdk";
-import {
-  uiMessageReducer,
-  isUIMessage,
-  isRemoveUIMessage,
-  type UIMessage,
-  type RemoveUIMessage,
-} from "@langchain/langgraph-sdk/react-ui";
 import { useQueryState } from "nuqs";
-import { useThreads } from "./Thread";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
-export type StateType = { messages: Message[]; ui?: UIMessage[] };
+import { useThreads } from "./Thread";
+import type { Message } from "@/lib/agent-types";
 
-const useTypedStream = useStream<
-  StateType,
-  {
-    UpdateType: {
-      messages?: Message[] | Message | string;
-      ui?: (UIMessage | RemoveUIMessage)[] | UIMessage | RemoveUIMessage;
-      context?: Record<string, unknown>;
-    };
-    CustomEventType: UIMessage | RemoveUIMessage;
-  }
->;
+export type StateType = { messages: Message[]; ui?: never[] };
 
-type StreamContextType = ReturnType<typeof useTypedStream>;
-const StreamContext = createContext<StreamContextType | undefined>(undefined);
+type SubmitInput = {
+  messages?: Message[] | Message;
+  context?: Record<string, unknown>;
+};
 
-async function sleep(ms = 4000) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+type SubmitOptions = {
+  optimisticValues?: (prev: StateType) => StateType;
+};
+
+interface AgentStream {
+  messages: Message[];
+  values: StateType;
+  isLoading: boolean;
+  error: Error | undefined;
+  interrupt: undefined;
+  submit: (input: SubmitInput, options?: SubmitOptions) => void;
+  stop: () => void;
+  getMessagesMetadata: (msg: Message) => undefined;
+  setBranch: (branch: string) => void;
 }
 
-async function checkGraphStatus(
-  apiUrl: string,
-  authScheme?: string,
-): Promise<boolean> {
-  try {
-    const headers = new Headers();
-    if (authScheme) headers.set("X-Auth-Scheme", authScheme);
+const StreamContext = createContext<AgentStream | undefined>(undefined);
 
-    const res = await fetch(`${apiUrl}/info`, { headers });
+async function checkGraphStatus(apiUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${apiUrl}/info`, { cache: "no-store" });
     return res.ok;
-  } catch (e) {
-    console.error(e);
+  } catch {
     return false;
   }
 }
 
-const StreamSession = ({
+function normalizeInput(input: SubmitInput): {
+  messages: Message[];
+  context?: Record<string, unknown>;
+} {
+  let msgs: Message[] = [];
+  if (Array.isArray(input.messages)) {
+    msgs = input.messages;
+  } else if (input.messages) {
+    msgs = [input.messages];
+  }
+  return { messages: msgs, context: input.context };
+}
+
+async function createThread(apiUrl: string): Promise<string> {
+  const res = await fetch(`${apiUrl}/threads`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error(`Failed to create thread: ${res.status}`);
+  const data = (await res.json()) as { thread_id: string };
+  return data.thread_id;
+}
+
+interface SSEEvent {
+  event: string;
+  data: string;
+}
+
+function parseSSEBuffer(buffer: string): {
+  events: SSEEvent[];
+  remainder: string;
+} {
+  const events: SSEEvent[] = [];
+  let remainder = buffer;
+  let idx: number;
+  while ((idx = remainder.indexOf("\n\n")) !== -1) {
+    const block = remainder.slice(0, idx);
+    remainder = remainder.slice(idx + 2);
+    let eventName = "message";
+    const dataLines: string[] = [];
+    for (const line of block.split("\n")) {
+      if (line.startsWith("event:")) eventName = line.slice(6).trim();
+      else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+    }
+    events.push({ event: eventName, data: dataLines.join("\n") });
+  }
+  return { events, remainder };
+}
+
+function messageContentToText(content: Message["content"]): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((c): c is { type: "text"; text: string } =>
+      typeof c === "object" && c !== null && (c as { type?: string }).type === "text",
+    )
+    .map((c) => c.text)
+    .join("");
+}
+
+function useAgentStream(config: {
+  apiUrl: string;
+  threadId: string | null;
+  onThreadId: (id: string) => void;
+}): AgentStream {
+  const { apiUrl, threadId, onThreadId } = config;
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Load message history when thread id changes
+  useEffect(() => {
+    if (!threadId) {
+      setMessages([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiUrl}/threads/${threadId}/state`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          values?: { messages?: Message[] };
+        };
+        if (!cancelled) setMessages(data.values?.messages ?? []);
+      } catch {
+        // leave messages as-is
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl, threadId]);
+
+  const submit = useCallback(
+    (input: SubmitInput, options?: SubmitOptions) => {
+      setError(undefined);
+      setIsLoading(true);
+
+      // Optimistic update (e.g., show user's message immediately)
+      if (options?.optimisticValues) {
+        setMessages((prev) => {
+          const next = options.optimisticValues!({ messages: prev });
+          return next.messages;
+        });
+      }
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const assistantId = uuidv4();
+      let seenToken = false;
+
+      (async () => {
+        try {
+          let id = threadId;
+          if (!id) {
+            id = await createThread(apiUrl);
+            onThreadId(id);
+          }
+
+          const normalized = normalizeInput(input);
+
+          const res = await fetch(`${apiUrl}/runs/stream`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ thread_id: id, input: normalized }),
+            signal: controller.signal,
+          });
+          if (!res.ok || !res.body) {
+            throw new Error(`stream error: ${res.status}`);
+          }
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parsed = parseSSEBuffer(buffer);
+            buffer = parsed.remainder;
+
+            for (const evt of parsed.events) {
+              if (evt.event === "token") {
+                const payload = JSON.parse(evt.data || "{}") as {
+                  content?: string;
+                };
+                const chunk = payload.content ?? "";
+                if (!chunk) continue;
+                setMessages((prev) => {
+                  if (!seenToken) {
+                    seenToken = true;
+                    return [
+                      ...prev,
+                      { id: assistantId, type: "ai", content: chunk },
+                    ];
+                  }
+                  const last = prev[prev.length - 1];
+                  if (last?.type === "ai" && last.id === assistantId) {
+                    const prevText = messageContentToText(last.content);
+                    return [
+                      ...prev.slice(0, -1),
+                      { ...last, content: prevText + chunk },
+                    ];
+                  }
+                  return [
+                    ...prev,
+                    { id: assistantId, type: "ai", content: chunk },
+                  ];
+                });
+              } else if (evt.event === "values") {
+                const payload = JSON.parse(evt.data || "{}") as {
+                  messages?: Message[];
+                };
+                if (payload.messages) setMessages(payload.messages);
+              } else if (evt.event === "error") {
+                const payload = JSON.parse(evt.data || "{}") as {
+                  error?: string;
+                };
+                throw new Error(payload.error || "stream error");
+              }
+            }
+          }
+        } catch (err) {
+          if ((err as Error).name !== "AbortError") {
+            setError(err as Error);
+          }
+        } finally {
+          if (abortRef.current === controller) abortRef.current = null;
+          setIsLoading(false);
+        }
+      })();
+    },
+    [apiUrl, threadId, onThreadId],
+  );
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsLoading(false);
+  }, []);
+
+  return {
+    messages,
+    values: { messages },
+    isLoading,
+    error,
+    interrupt: undefined,
+    submit,
+    stop,
+    getMessagesMetadata: () => undefined,
+    setBranch: () => {},
+  };
+}
+
+function StreamSession({
   children,
   apiUrl,
-  assistantId,
-  authScheme,
 }: {
   children: ReactNode;
   apiUrl: string;
-  assistantId: string;
-  authScheme?: string;
-}) => {
+}) {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
-  const streamValue = useTypedStream({
-    apiUrl,
-    assistantId,
-    ...(authScheme && {
-      defaultHeaders: {
-        "X-Auth-Scheme": authScheme,
-      },
-    }),
-    threadId: threadId ?? null,
-    fetchStateHistory: true,
-    onCustomEvent: (event, options) => {
-      if (isUIMessage(event) || isRemoveUIMessage(event)) {
-        options.mutate((prev) => {
-          const ui = uiMessageReducer(prev.ui ?? [], event);
-          return { ...prev, ui };
-        });
-      }
-    },
-    onThreadId: (id) => {
+
+  const onThreadId = useCallback(
+    (id: string) => {
       setThreadId(id);
-      sleep().then(() => getThreads().then(setThreads).catch(console.error));
+      // small delay so backend's create has committed before listing
+      setTimeout(() => {
+        getThreads().then(setThreads).catch(console.error);
+      }, 500);
     },
-  });
+    [getThreads, setThreads, setThreadId],
+  );
+
+  const stream = useAgentStream({ apiUrl, threadId, onThreadId });
 
   useEffect(() => {
-    checkGraphStatus(apiUrl, authScheme).then((ok) => {
+    checkGraphStatus(apiUrl).then((ok) => {
       if (!ok) {
-        toast.error("Failed to connect to LangGraph server", {
+        toast.error("Failed to connect to the agent server", {
           description: () => (
             <p>
-              Please ensure your graph is running at <code>{apiUrl}</code>.
+              Please ensure the backend is running at <code>{apiUrl}</code>.
             </p>
           ),
           duration: 10000,
@@ -106,48 +309,35 @@ const StreamSession = ({
         });
       }
     });
-  }, [apiUrl, authScheme]);
+  }, [apiUrl]);
 
   return (
-    <StreamContext.Provider value={streamValue}>
-      {children}
-    </StreamContext.Provider>
+    <StreamContext.Provider value={stream}>{children}</StreamContext.Provider>
   );
-};
+}
 
 export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const assistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID;
-  const authScheme = process.env.NEXT_PUBLIC_AUTH_SCHEME;
 
-  if (!apiUrl || !assistantId) {
+  if (!apiUrl) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center p-4">
         <div className="max-w-md rounded-lg border bg-background p-6 text-sm text-muted-foreground">
           <p className="font-semibold text-foreground">Configuration missing</p>
           <p className="mt-2">
-            Set <code>NEXT_PUBLIC_API_URL</code> and{" "}
-            <code>NEXT_PUBLIC_ASSISTANT_ID</code> in the deployment environment.
+            Set <code>NEXT_PUBLIC_API_URL</code> in the deployment environment.
           </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <StreamSession
-      apiUrl={apiUrl}
-      assistantId={assistantId}
-      authScheme={authScheme || undefined}
-    >
-      {children}
-    </StreamSession>
-  );
+  return <StreamSession apiUrl={apiUrl}>{children}</StreamSession>;
 };
 
-export const useStreamContext = (): StreamContextType => {
+export const useStreamContext = (): AgentStream => {
   const context = useContext(StreamContext);
   if (context === undefined) {
     throw new Error("useStreamContext must be used within a StreamProvider");

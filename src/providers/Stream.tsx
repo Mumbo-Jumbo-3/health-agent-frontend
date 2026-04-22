@@ -215,7 +215,9 @@ function useAgentStream(config: {
               if (evt.event === "token") {
                 const payload = JSON.parse(evt.data || "{}") as {
                   content?: string;
+                  node?: string;
                 };
+                if (payload.node !== "claude_synthesize") continue;
                 const chunk = payload.content ?? "";
                 if (!chunk) continue;
                 setMessages((prev) => {

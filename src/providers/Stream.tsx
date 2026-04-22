@@ -95,7 +95,7 @@ function parseSSEBuffer(buffer: string): {
   remainder: string;
 } {
   const events: SSEEvent[] = [];
-  let remainder = buffer;
+  let remainder = buffer.replace(/\r\n/g, "\n");
   let idx: number;
   while ((idx = remainder.indexOf("\n\n")) !== -1) {
     const block = remainder.slice(0, idx);

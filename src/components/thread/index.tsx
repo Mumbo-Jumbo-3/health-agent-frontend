@@ -183,7 +183,7 @@ export function Thread() {
   const chatStarted = !!threadId || !!messages.length;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-dvh w-full overflow-hidden">
       <div className="relative hidden lg:flex">
         <motion.div
           className="absolute z-20 h-full overflow-hidden border-r bg-background"
@@ -210,10 +210,7 @@ export function Thread() {
       </div>
 
       <motion.div
-        className={cn(
-          "relative flex min-w-0 flex-1 flex-col overflow-hidden",
-          !chatStarted && "grid-rows-[1fr]",
-        )}
+        className="relative flex min-w-0 flex-1 flex-col overflow-hidden"
         layout={isLargeScreen}
         animate={{
           marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
@@ -230,7 +227,7 @@ export function Thread() {
         }
       >
         {!chatStarted && (
-          <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
+          <div className="absolute top-0 left-0 z-20 flex w-full shrink-0 items-center justify-between gap-3 p-2 pl-4">
             <div>
               {(!chatHistoryOpen || !isLargeScreen) && (
                 <Button
@@ -252,7 +249,7 @@ export function Thread() {
           </div>
         )}
         {chatStarted && (
-          <div className="relative z-10 flex items-center justify-between gap-3 p-2">
+          <div className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 bg-background p-2">
             <div className="relative flex items-center justify-start gap-2">
               <div className="absolute left-0 z-10">
                 {(!chatHistoryOpen || !isLargeScreen) && (
@@ -324,7 +321,7 @@ export function Thread() {
           </div>
         )}
 
-        <StickToBottom className="relative flex-1 overflow-hidden">
+        <StickToBottom className="relative flex-1 min-h-0 overflow-hidden">
           <StickyToBottomContent
             className={cn(
               "absolute inset-0 overflow-y-scroll px-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent",

@@ -3,7 +3,6 @@ import { useThreads } from "@/providers/Thread";
 import type { Thread } from "@/lib/agent-types";
 import { useEffect } from "react";
 
-import { getContentString } from "../utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import {
   Sheet,
@@ -27,17 +26,8 @@ function ThreadList({
   return (
     <div className="flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent">
       {threads.map((t) => {
-        let itemText = t.thread_id;
-        if (
-          typeof t.values === "object" &&
-          t.values &&
-          "messages" in t.values &&
-          Array.isArray(t.values.messages) &&
-          t.values.messages?.length > 0
-        ) {
-          const firstMessage = t.values.messages[0];
-          itemText = getContentString(firstMessage.content);
-        }
+        const title = t.metadata?.title?.trim();
+        const itemText = title && title.length > 0 ? title : "New conversation";
         return (
           <div
             key={t.thread_id}
@@ -110,7 +100,7 @@ export default function ThreadHistory() {
             )}
           </Button>
           <h1 className="text-xl font-semibold tracking-tight">
-            Thread History
+            History
           </h1>
         </div>
         {threadsLoading ? (
@@ -132,7 +122,7 @@ export default function ThreadHistory() {
             className="flex lg:hidden"
           >
             <SheetHeader>
-              <SheetTitle>Thread History</SheetTitle>
+              <SheetTitle>History</SheetTitle>
             </SheetHeader>
             <ThreadList
               threads={threads}

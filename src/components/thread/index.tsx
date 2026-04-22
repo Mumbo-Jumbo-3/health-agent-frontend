@@ -190,10 +190,10 @@ export function Thread() {
           style={{ width: 300 }}
           animate={
             isLargeScreen
-              ? { x: chatHistoryOpen ? 0 : -300 }
-              : { x: chatHistoryOpen ? 0 : -300 }
+              ? { x: chatHistoryOpen ? 0 : -299 }
+              : { x: chatHistoryOpen ? 0 : -299 }
           }
-          initial={{ x: -300 }}
+          initial={{ x: -299 }}
           transition={
             isLargeScreen
               ? { type: "spring", stiffness: 300, damping: 30 }

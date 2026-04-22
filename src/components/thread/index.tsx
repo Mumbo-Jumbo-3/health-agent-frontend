@@ -6,6 +6,7 @@ import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
 import { Button } from "../ui/button";
 import { AssistantMessage, AssistantMessageLoading } from "./messages/ai";
+import { StageTimeline } from "./messages/stage-timeline";
 import { HumanMessage } from "./messages/human";
 import { DO_NOT_RENDER_ID_PREFIX } from "@/lib/ensure-tool-responses";
 import type { Message } from "@/lib/agent-types";
@@ -86,6 +87,8 @@ export function Thread() {
   const stream = useStreamContext();
   const messages = stream.messages;
   const isLoading = stream.isLoading;
+  const stageTimeline = stream.stageTimeline;
+  const hasStageEvents = stageTimeline.hasAny;
 
   const lastError = useRef<string | undefined>(undefined);
 
@@ -331,35 +334,66 @@ export function Thread() {
             contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
             content={
               <>
-                {messages
-                  .filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX))
-                  .map((message, index) =>
-                    message.type === "human" ? (
-                      <HumanMessage
-                        key={message.id || `${message.type}-${index}`}
-                        message={message}
-                        isLoading={isLoading}
-                      />
-                    ) : (
-                      <AssistantMessage
-                        key={message.id || `${message.type}-${index}`}
-                        message={message}
-                        isLoading={isLoading}
-                      />
-                    ),
-                  )}
-                <AnimatePresence>
-                  {isLoading && !firstTokenReceived && (
-                    <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                    >
-                      <AssistantMessageLoading />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {(() => {
+                  const visible = messages.filter(
+                    (m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX),
+                  );
+                  const lastHumanIdx = (() => {
+                    for (let i = visible.length - 1; i >= 0; i--) {
+                      if (visible[i].type === "human") return i;
+                    }
+                    return -1;
+                  })();
+                  const showTimeline = hasStageEvents;
+                  const showFallbackLoader =
+                    isLoading && !firstTokenReceived && !hasStageEvents;
+                  const timelineCollapsed = firstTokenReceived || !isLoading;
+
+                  const rendered: ReactNode[] = [];
+                  visible.forEach((message, index) => {
+                    rendered.push(
+                      message.type === "human" ? (
+                        <HumanMessage
+                          key={message.id || `${message.type}-${index}`}
+                          message={message}
+                          isLoading={isLoading}
+                        />
+                      ) : (
+                        <AssistantMessage
+                          key={message.id || `${message.type}-${index}`}
+                          message={message}
+                          isLoading={isLoading}
+                        />
+                      ),
+                    );
+                    if (index === lastHumanIdx && showTimeline) {
+                      rendered.push(
+                        <StageTimeline
+                          key="stage-timeline"
+                          state={stageTimeline}
+                          defaultCollapsed={timelineCollapsed}
+                        />,
+                      );
+                    }
+                  });
+                  return (
+                    <>
+                      {rendered}
+                      <AnimatePresence>
+                        {showFallbackLoader && (
+                          <motion.div
+                            key="loading"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                          >
+                            <AssistantMessageLoading />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  );
+                })()}
               </>
             }
             footer={

@@ -15,6 +15,16 @@ import { v4 as uuidv4 } from "uuid";
 
 import { useThreads } from "./Thread";
 import type { Message } from "@/lib/agent-types";
+import {
+  useStageTimeline,
+  type PhaseEvent,
+  type StageTimelineState,
+} from "@/hooks/use-stage-timeline";
+
+const STREAM_DEBUG = process.env.NEXT_PUBLIC_STREAM_DEBUG === "true";
+const streamLog = (...args: unknown[]) => {
+  if (STREAM_DEBUG) console.debug("[stream]", ...args);
+};
 
 export type StateType = { messages: Message[]; ui?: never[] };
 
@@ -37,6 +47,7 @@ interface AgentStream {
   stop: () => void;
   getMessagesMetadata: (msg: Message) => undefined;
   setBranch: (branch: string) => void;
+  stageTimeline: StageTimelineState;
 }
 
 const StreamContext = createContext<AgentStream | undefined>(undefined);
@@ -122,6 +133,7 @@ function useAgentStream(config: {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
+  const stageTimeline = useStageTimeline();
 
   // Load message history when thread id changes
   useEffect(() => {
@@ -153,6 +165,7 @@ function useAgentStream(config: {
     (input: SubmitInput, options?: SubmitOptions) => {
       setError(undefined);
       setIsLoading(true);
+      stageTimeline.reset();
 
       // Optimistic update (e.g., show user's message immediately)
       if (options?.optimisticValues) {
@@ -208,6 +221,7 @@ function useAgentStream(config: {
                 setMessages((prev) => {
                   if (!seenToken) {
                     seenToken = true;
+                    streamLog("first token", { assistantId, chars: chunk.length });
                     return [
                       ...prev,
                       { id: assistantId, type: "ai", content: chunk },
@@ -226,15 +240,27 @@ function useAgentStream(config: {
                     { id: assistantId, type: "ai", content: chunk },
                   ];
                 });
+              } else if (evt.event === "phase") {
+                try {
+                  const payload = JSON.parse(evt.data || "{}") as PhaseEvent;
+                  streamLog("phase", payload);
+                  if (payload.phase && payload.status) {
+                    stageTimeline.applyPhase(payload);
+                  }
+                } catch (err) {
+                  streamLog("phase parse error", err);
+                }
               } else if (evt.event === "values") {
                 const payload = JSON.parse(evt.data || "{}") as {
                   messages?: Message[];
                 };
+                streamLog("values", { messages: payload.messages?.length });
                 if (payload.messages) setMessages(payload.messages);
               } else if (evt.event === "error") {
                 const payload = JSON.parse(evt.data || "{}") as {
                   error?: string;
                 };
+                streamLog("error", payload);
                 throw new Error(payload.error || "stream error");
               }
             }
@@ -249,7 +275,7 @@ function useAgentStream(config: {
         }
       })();
     },
-    [apiUrl, threadId, onThreadId],
+    [apiUrl, threadId, onThreadId, stageTimeline],
   );
 
   const stop = useCallback(() => {
@@ -268,6 +294,7 @@ function useAgentStream(config: {
     stop,
     getMessagesMetadata: () => undefined,
     setBranch: () => {},
+    stageTimeline: stageTimeline.state,
   };
 }
 

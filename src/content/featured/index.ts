@@ -24,7 +24,7 @@ export const featuredQueries: FeaturedQueryMeta[] = [
   {
     slug: "stress-reduction",
     query: "Stress",
-    description: "best ways to increase my ability to handle stress",
+    description: "how to increase my ability to handle stress",
     shareLinks: {
       chatgpt: "https://chatgpt.com/share/69cbeee1-b48c-832a-a7d2-ea317d2e7f6b",
       claude: "https://claude.ai/share/d1d366ed-6b55-4237-9135-9b8dba02393f",

@@ -46,12 +46,12 @@ export const TIMELINE_SPEC: StageSpec[] = [
     id: "trusted_search",
     parentId: "search_group",
     label: "Trusted X accounts",
-    description: "Curated handles prioritized for Ray Peat insight",
+    description: "Curated handles aligned with the research archive",
   },
   {
     id: "rag_base",
     parentId: "search_group",
-    label: "Ray Peat archive",
+    label: "Curated research archive",
     description: "Vector + keyword retrieval against your question",
   },
   {

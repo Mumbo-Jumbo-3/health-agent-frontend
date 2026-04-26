@@ -1,6 +1,6 @@
 # How to Increase Testosterone Naturally
 
-Based on comprehensive evidence from Dr. Ray Peat's research and trusted health practitioners, testosterone optimization requires a systematic approach addressing diet, nutrients, light exposure, and lifestyle factors.
+Drawing on a curated research archive and trusted health practitioners, testosterone optimization requires a systematic approach addressing diet, nutrients, light exposure, and lifestyle factors.
 
 ## Foundational Dietary Approach
 
@@ -141,6 +141,6 @@ From a scientific standpoint, supports testosterone production and stress reduct
 
 ## Evidence Hierarchy Note
 
-This response prioritizes findings from Dr. Ray Peat's bioenergetic framework and established health practitioners specializing in hormone optimization. The emphasis on adequate calories, carbohydrates, saturated fats, thyroid function, mitochondrial health, and metabolic rate reflects Peat's core principles. Nutrient recommendations and specific food choices are corroborated across both primary evidence sources with remarkable consistency.
+This response prioritizes findings from the curated research archive and established health practitioners specializing in hormone optimization. The emphasis on adequate calories, carbohydrates, saturated fats, thyroid function, mitochondrial health, and metabolic rate reflects the bioenergetic principles that run through the archive. Nutrient recommendations and specific food choices are corroborated across both primary evidence sources with remarkable consistency.
 
 Start with foundational elements (sleep, diet, minerals, light) before moving to advanced protocols. Consider baseline bloodwork to personalize your approach and track progress objectively.

@@ -1,6 +1,6 @@
 # How to Increase Cognitive Function: A Comprehensive Approach
 
-Based on the hierarchy of evidence from Ray Peat's bioenergetic framework and trusted health experts, here's how to systematically enhance cognitive function:
+Drawing on the curated research archive and trusted health experts, here's how to systematically enhance cognitive function:
 
 ## Foundation: Metabolic Health & Energy Production
 
@@ -158,6 +158,6 @@ Actively seek:
 
 ## Evidence Hierarchy Note
 
-This response prioritizes Ray Peat's bioenergetic framework emphasizing metabolic health, thyroid function, and environmental enrichment, integrated with trusted expert protocols on exercise-induced BDNF elevation, dopamine optimization through sunlight and HIIT, and specific supplement timing. Where evidence converged (e.g., thiamine, magnesium threonate, exercise, sunlight), recommendations were strengthened. The Peat framework provided unique emphasis on CO2, GABA/glutamate balance, anti-serotonin approaches, and the critical importance of enriched environments that may be underweighted in conventional protocols.
+This response prioritizes the curated research archive — emphasizing metabolic health, thyroid function, and environmental enrichment — integrated with trusted expert protocols on exercise-induced BDNF elevation, dopamine optimization through sunlight and HIIT, and specific supplement timing. Where evidence converged (e.g., thiamine, magnesium threonate, exercise, sunlight), recommendations were strengthened. The archive provided unique emphasis on CO2, GABA/glutamate balance, anti-serotonin approaches, and the critical importance of enriched environments that may be underweighted in conventional protocols.
 
 Start with the metabolic and light foundations, layer in targeted exercise and supplementation, and address individual variations through testing. Cognitive enhancement is a multidomain intervention requiring consistency across all systems.

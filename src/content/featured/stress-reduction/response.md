@@ -2,7 +2,7 @@
 
 ## **The Foundation: Metabolic & Physiological Resilience**
 
-Your stress-handling capacity fundamentally depends on cellular energy production and metabolic stability. This prioritizes the Ray Peat corpus and trusted research accounts, with emphasis on actionable strategies that work at the cellular level.
+Your stress-handling capacity fundamentally depends on cellular energy production and metabolic stability. This prioritizes the curated research archive and trusted research accounts, with emphasis on actionable strategies that work at the cellular level.
 
 ### **1. Optimize Your Cellular Energy System**
 
@@ -98,6 +98,6 @@ You cannot regulate stress hormones under poor lighting conditions:
 
 ## **Priority Note on Evidence**
 
-This response primarily draws from the comprehensive Ray Peat corpus (emphasizing metabolic/cellular approaches to stress resilience) and trusted research accounts like @Helios_Movement and @hubermanlab (providing specific protocols). These sources converge strongly on cellular energy metabolism, light optimization, breathing mechanics, and strategic nutrient support as foundational—not just symptomatic stress management techniques.
+This response primarily draws from the curated research archive (emphasizing metabolic/cellular approaches to stress resilience) and trusted research accounts like @Helios_Movement and @hubermanlab (providing specific protocols). These sources converge strongly on cellular energy metabolism, light optimization, breathing mechanics, and strategic nutrient support as foundational—not just symptomatic stress management techniques.
 
 The integrated approach addresses stress at multiple levels: cellular energy production, nervous system regulation, hormonal balance, and environmental optimization. Consistency across these domains builds true physiological resilience rather than just coping mechanisms.

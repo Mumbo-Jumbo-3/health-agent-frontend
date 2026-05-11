@@ -325,7 +325,10 @@ export function Thread() {
             !chatStarted && "flex flex-col items-stretch justify-center",
             chatStarted && "grid grid-rows-[1fr_auto]",
           )}
-          contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
+          contentClassName={cn(
+            "max-w-3xl mx-auto flex flex-col gap-4 w-full",
+            chatStarted ? "pt-8 pb-16" : "py-2 sm:pt-8 sm:pb-16",
+          )}
           content={
             <>
               {(() => {
@@ -394,25 +397,26 @@ export function Thread() {
           footer={
             <div
               className={cn(
-                "bg-background flex flex-col items-center gap-8",
-                chatStarted && "sticky bottom-0",
+                "bg-background flex flex-col items-center",
+                chatStarted ? "gap-8 sticky bottom-0" : "gap-3 sm:gap-8",
               )}
             >
               {!chatStarted && (
-                <div className="flex flex-col items-center gap-6">
-                  <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-3 sm:gap-6">
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
                     <RootCauseHealthLogo
+                      className="size-12 sm:size-16"
                       width={64}
                       height={64}
                     />
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                       Root Cause Health
                     </h1>
-                    <p className="text-muted-foreground text-center text-lg">
+                    <p className="text-muted-foreground text-center text-base sm:text-lg">
                       Get health knowledge from trusted sources
                     </p>
-                    <div className="text-muted-foreground flex w-full max-w-3xl flex-col items-center gap-1 text-center text-base">
-                      <p>
+                    <div className="text-muted-foreground flex w-full min-w-0 max-w-3xl flex-col items-center gap-1 text-center text-xs sm:text-base">
+                      <p className="break-words">
                         <span>Sources: </span>
                         <a
                           href="https://expulsia.com/health/peat-index"
@@ -484,9 +488,16 @@ export function Thread() {
                 </div>
               )}
 
-              <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
+              {chatStarted && (
+                <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
+              )}
 
-              <div className="bg-muted relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-2xl border border-solid shadow-xs transition-all">
+              <div
+                className={cn(
+                  "bg-muted relative z-10 mx-auto w-full max-w-3xl rounded-2xl border border-solid shadow-xs transition-all",
+                  chatStarted ? "mb-8" : "mb-2 sm:mb-8",
+                )}
+              >
                 <form
                   onSubmit={handleSubmit}
                   className="mx-auto flex max-w-3xl flex-col"

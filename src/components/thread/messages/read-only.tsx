@@ -8,7 +8,7 @@ function ReadOnlyHumanMessage({ message }: { message: Message }) {
   if (!content) return null;
   return (
     <div className="ml-auto flex max-w-[85%] items-center gap-2">
-      <p className="bg-muted ml-auto w-fit rounded-3xl px-4 py-2 text-right whitespace-pre-wrap">
+      <p className="bg-muted ml-auto w-fit rounded-3xl px-4 py-2 break-words whitespace-pre-wrap">
         {content}
       </p>
     </div>

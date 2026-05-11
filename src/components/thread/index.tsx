@@ -404,7 +404,8 @@ export function Thread() {
               <TooltipIconButton
                 size="lg"
                 className="p-4"
-                tooltip="New thread"
+                tooltip="New"
+                tooltipClassName="text-base font-bold"
                 variant="ghost"
                 onClick={() => setThreadId(null)}
               >
@@ -450,6 +451,7 @@ export function Thread() {
                           key={message.id || `${message.type}-${index}`}
                           message={message}
                           isLoading={isLoading}
+                          isFollowUp={index > 0}
                         />
                       ) : (
                         <AssistantMessage
@@ -643,11 +645,11 @@ export function Thread() {
         onOpenChange={setShareSheetOpen}
       >
         <SheetContent
-          side="bottom"
-          className="mx-auto w-full max-w-lg gap-5 rounded-t-xl border-x"
+          side="top"
+          className="mx-auto w-full max-w-lg gap-5 rounded-b-xl border-x"
         >
           <SheetHeader className="pr-12">
-            <SheetTitle>Share conversation</SheetTitle>
+            <SheetTitle className="text-2xl font-bold">Share</SheetTitle>
             <SheetDescription>
               Anyone with this link can view this conversation.
             </SheetDescription>

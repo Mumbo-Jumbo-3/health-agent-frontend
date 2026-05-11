@@ -91,7 +91,7 @@ export default async function SharePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-4">
+      <header className="flex w-full items-center justify-between gap-3 px-4 py-4">
         <Link
           href="/"
           className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"

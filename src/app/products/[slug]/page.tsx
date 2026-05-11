@@ -32,10 +32,10 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-4">
+      <header className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4">
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground flex min-w-0 items-center gap-2 text-sm transition-colors"
+          className="text-muted-foreground hover:text-foreground flex min-w-0 items-center gap-2 justify-self-start text-sm transition-colors"
         >
           <RootCauseHealthLogo
             width={24}
@@ -44,8 +44,9 @@ export default async function ProductPage({ params }: PageProps) {
           <span className="truncate font-semibold">Root Cause Health</span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <AppNav />
+        <AppNav className="justify-self-center" />
+
+        <div className="flex items-center justify-self-end gap-3">
           <UserButton />
         </div>
       </header>

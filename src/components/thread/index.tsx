@@ -324,8 +324,8 @@ export function Thread() {
         }
       >
         {!chatStarted && (
-          <div className="absolute top-0 left-0 z-20 flex w-full shrink-0 items-center justify-between gap-3 p-2 pl-4">
-            <div>
+          <div className="absolute top-0 left-0 z-20 grid w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 p-2 pl-4">
+            <div className="justify-self-start">
               {(!chatHistoryOpen || !isLargeScreen) && (
                 <Button
                   className="hover:bg-accent"
@@ -340,15 +340,15 @@ export function Thread() {
                 </Button>
               )}
             </div>
-            <div className="flex items-center gap-3 pr-2">
-              <AppNav />
+            <AppNav className="justify-self-center" />
+            <div className="flex items-center justify-self-end gap-3 pr-2">
               <UserButton />
             </div>
           </div>
         )}
         {chatStarted && (
-          <div className="bg-background sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 p-2">
-            <div className="relative flex items-center justify-start gap-2">
+          <div className="bg-background sticky top-0 z-20 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 p-2">
+            <div className="relative flex items-center justify-self-start gap-2">
               <div className="absolute left-0 z-10">
                 {(!chatHistoryOpen || !isLargeScreen) && (
                   <Button
@@ -386,8 +386,9 @@ export function Thread() {
               </motion.button>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <AppNav className="hidden min-[430px]:flex" />
+            <AppNav className="hidden justify-self-center min-[430px]:flex" />
+
+            <div className="flex items-center justify-self-end gap-2 sm:gap-3">
               {threadId && (
                 <TooltipIconButton
                   size="lg"
@@ -514,14 +515,14 @@ export function Thread() {
                       <p className="text-muted-foreground text-center text-lg">
                         Get health knowledge from trusted sources
                       </p>
-                      <div className="text-muted-foreground/60 flex flex-col items-center gap-1 text-center text-base">
+                      <div className="text-muted-foreground flex flex-col items-center gap-1 text-center text-base">
                         <p>
                           <span>Sources: </span>
                           <a
                             href="https://expulsia.com/health/peat-index"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             Ray Peat
                           </a>
@@ -530,7 +531,7 @@ export function Thread() {
                             href="https://x.com/helios_movement"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @helios_movement
                           </a>
@@ -539,7 +540,7 @@ export function Thread() {
                             href="https://x.com/grimhood"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @grimhood
                           </a>
@@ -548,7 +549,7 @@ export function Thread() {
                             href="https://x.com/aestheticprimal"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @aestheticprimal
                           </a>
@@ -557,7 +558,7 @@ export function Thread() {
                             href="https://x.com/hubermanlab"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @hubermanlab
                           </a>
@@ -566,7 +567,7 @@ export function Thread() {
                             href="https://x.com/foundmyfitness"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @foundmyfitness
                           </a>
@@ -575,7 +576,7 @@ export function Thread() {
                             href="https://x.com/outdoctrination"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-foreground underline"
+                            className="hover:text-white underline"
                           >
                             @outdoctrination
                           </a>

@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FeaturedQueryMeta } from "@/lib/content";
 import { FeaturedCard } from "./card";
 
 export function FeaturedShowcase() {
   const [items, setItems] = useState<FeaturedQueryMeta[]>([]);
-  const [startIndex, setStartIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
-  const visible = 3;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,32 +25,42 @@ export function FeaturedShowcase() {
     };
   }, []);
 
-  const maxStart = Math.max(0, items.length - visible);
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || items.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const best = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (best) {
+          const idx = Number((best.target as HTMLElement).dataset.idx);
+          if (!Number.isNaN(idx)) setActiveIndex(idx);
+        }
+      },
+      { root: scroller, threshold: [0.5, 0.75, 1] },
+    );
+    scroller
+      .querySelectorAll<HTMLElement>("[data-idx]")
+      .forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [items.length]);
 
   if (items.length === 0) return null;
 
-  const canPrev = startIndex > 0;
-  const canNext = startIndex < maxStart;
-
-  function prev() {
-    if (!canPrev) return;
-    setDirection(-1);
-    setStartIndex((i) => i - 1);
+  function scrollToIndex(i: number) {
+    const scroller = scrollerRef.current;
+    const child = scroller?.children[i] as HTMLElement | undefined;
+    if (!scroller || !child) return;
+    const offset =
+      child.offsetLeft - (scroller.clientWidth - child.clientWidth) / 2;
+    scroller.scrollTo({ left: offset, behavior: "smooth" });
   }
 
-  function next() {
-    if (!canNext) return;
-    setDirection(1);
-    setStartIndex((i) => i + 1);
-  }
-
-  const visibleCards = items.slice(startIndex, startIndex + visible);
-
-  const variants = {
-    enter: (d: number) => ({ x: d > 0 ? 80 : -80, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? -80 : 80, opacity: 0 }),
-  };
+  const canPrev = activeIndex > 0;
+  const canNext = activeIndex < items.length - 1;
+  const prev = () => scrollToIndex(activeIndex - 1);
+  const next = () => scrollToIndex(activeIndex + 1);
 
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-3">
@@ -67,23 +75,19 @@ export function FeaturedShowcase() {
           <ChevronLeft className="size-5" />
         </button>
 
-        <div className="min-w-0 flex-1 overflow-hidden py-1">
-          <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-            <motion.div
-              key={startIndex}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        <div
+          ref={scrollerRef}
+          className="flex min-w-0 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-[10%] py-1 sm:px-[8%] lg:px-[5%] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {items.map((meta, i) => (
+            <div
+              key={meta.slug}
+              data-idx={i}
+              className="snap-center shrink-0 basis-[80%] sm:basis-[42%] lg:basis-[30%]"
             >
-              {visibleCards.map((meta) => (
-                <FeaturedCard key={meta.slug} meta={meta} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
+              <FeaturedCard meta={meta} />
+            </div>
+          ))}
         </div>
 
         <button

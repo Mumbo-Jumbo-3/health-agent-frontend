@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import { ArrowLeft } from "lucide-react";
-import { AppNav } from "@/components/app-nav";
-import { RootCauseHealthLogo } from "@/components/icons/root-cause-health";
+import { SiteHeader } from "@/components/site-header";
 import { MarkdownText } from "@/components/thread/markdown-text";
 import { fetchProduct } from "@/lib/content";
 
@@ -32,24 +30,7 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
-      <header className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4">
-        <Link
-          href="/"
-          className="text-muted-foreground hover:text-foreground flex min-w-0 items-center gap-2 justify-self-start text-sm transition-colors"
-        >
-          <RootCauseHealthLogo
-            width={24}
-            height={24}
-          />
-          <span className="truncate font-semibold">Root Cause Health</span>
-        </Link>
-
-        <AppNav className="justify-self-center" />
-
-        <div className="flex items-center justify-self-end gap-3">
-          <UserButton />
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-8">
         <Link

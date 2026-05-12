@@ -195,6 +195,15 @@ export function FeaturedShowcase() {
           ))}
         </div>
 
+        <div
+          aria-hidden
+          className="pointer-events-auto absolute inset-y-0 left-0 z-[5] w-[12%]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-auto absolute inset-y-0 right-0 z-[5] w-[12%]"
+        />
+
         <motion.button
           onClick={() => stepBy(-1)}
           variants={arrowVariants}

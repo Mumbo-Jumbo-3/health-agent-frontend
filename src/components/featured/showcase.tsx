@@ -63,8 +63,8 @@ export function FeaturedShowcase() {
   const next = () => scrollToIndex(activeIndex + 1);
 
   return (
-    <div className="flex w-full max-w-3xl flex-col items-center gap-3">
-      <p className="text-muted-foreground text-lg">Featured Queries</p>
+    <div className="flex w-full max-w-3xl flex-col items-center gap-1">
+      <p className="text-white text-xl">Featured</p>
       <div className="flex w-full items-center gap-2">
         <button
           onClick={prev}

@@ -275,11 +275,12 @@ export function Thread() {
     <div className="flex h-dvh w-full flex-col overflow-hidden">
       <SiteHeader />
 
-      <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-4 py-1.5">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-black px-4 py-1.5">
         <Button
           variant="ghost"
           size="sm"
           asChild
+          className="text-muted-foreground hover:text-foreground"
         >
           <Link
             href="/chat/history"
@@ -291,15 +292,17 @@ export function Thread() {
         </Button>
 
         <div className="flex items-center gap-1">
-          <TooltipIconButton
-            tooltip="New"
-            tooltipClassName="text-base font-bold"
-            variant="ghost"
-            className="size-9 p-1.5"
-            onClick={() => setThreadId(null)}
-          >
-            <SquarePen className="size-5" />
-          </TooltipIconButton>
+          {chatStarted && (
+            <TooltipIconButton
+              tooltip="New"
+              tooltipClassName="text-base font-bold"
+              variant="ghost"
+              className="size-9 p-1.5"
+              onClick={() => setThreadId(null)}
+            >
+              <SquarePen className="size-5" />
+            </TooltipIconButton>
+          )}
           {threadId && (
             <TooltipIconButton
               tooltip="Share conversation"
@@ -409,79 +412,12 @@ export function Thread() {
                       width={64}
                       height={64}
                     />
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
                       Root Cause Health
                     </h1>
                     <p className="text-muted-foreground text-center text-base sm:text-lg">
                       Get health knowledge from trusted sources
                     </p>
-                    <div className="text-muted-foreground flex w-full min-w-0 flex-col items-center gap-1 text-center text-xs sm:text-base">
-                      <p className="break-words">
-                        <span>Sources: </span>
-                        <a
-                          href="https://expulsia.com/health/peat-index"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          Ray Peat
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/helios_movement"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @helios_movement
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/grimhood"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @grimhood
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/aestheticprimal"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @aestheticprimal
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/hubermanlab"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @hubermanlab
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/foundmyfitness"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @foundmyfitness
-                        </a>
-                        {", "}
-                        <a
-                          href="https://x.com/outdoctrination"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-white underline"
-                        >
-                          @outdoctrination
-                        </a>
-                      </p>
-                    </div>
                   </div>
 
                   <FeaturedShowcase />
@@ -494,7 +430,7 @@ export function Thread() {
 
               <div
                 className={cn(
-                  "bg-muted relative z-10 mx-auto w-full max-w-3xl rounded-2xl border border-solid shadow-xs transition-all",
+                  "bg-muted relative z-10 mx-auto w-full max-w-3xl rounded-2xl border-2 border-primary border-solid shadow-xs transition-all",
                   chatStarted ? "mb-8" : "mb-2 sm:mb-8",
                 )}
               >
@@ -536,7 +472,7 @@ export function Thread() {
                     ) : (
                       <Button
                         type="submit"
-                        className="ml-auto shadow-md transition-all"
+                        className="ml-auto bg-primary shadow-md transition-all"
                         disabled={isLoading || !input.trim()}
                       >
                         Send

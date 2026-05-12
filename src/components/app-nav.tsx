@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle, ShoppingBag } from "lucide-react";
+import { BookOpen, MessageCircle, Pill } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/chat", label: "Chat", icon: MessageCircle },
-  { href: "/products", label: "Products", icon: ShoppingBag },
+  { href: "/ingestibles", label: "Ingestibles", icon: Pill },
+  { href: "/sources", label: "Sources", icon: BookOpen },
 ];
 
 export function AppNav({ className }: { className?: string }) {

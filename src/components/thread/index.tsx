@@ -330,7 +330,7 @@ export function Thread() {
           )}
           contentClassName={cn(
             "max-w-3xl mx-auto flex flex-col gap-4 w-full",
-            chatStarted ? "pt-8 pb-16" : "py-2 sm:pt-8 sm:pb-16",
+            chatStarted && "pt-8 pb-16",
           )}
           content={
             <>
@@ -431,7 +431,7 @@ export function Thread() {
               <div
                 className={cn(
                   "bg-muted relative z-10 mx-auto w-full max-w-3xl rounded-2xl border-2 border-primary border-solid shadow-xs transition-all",
-                  chatStarted ? "mb-8" : "mb-2 sm:mb-8",
+                  chatStarted && "mb-8",
                 )}
               >
                 <form

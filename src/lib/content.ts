@@ -13,13 +13,13 @@ export interface FeaturedQuery extends FeaturedQueryMeta {
   response_markdown: string;
 }
 
-export interface IngestibleMeta {
+export interface NutrientMeta {
   slug: string;
   name: string;
   prompt: string;
 }
 
-export interface Ingestible extends IngestibleMeta {
+export interface Nutrient extends NutrientMeta {
   response_markdown: string;
 }
 
@@ -48,10 +48,10 @@ export async function fetchFeaturedQuery(
   return fetchJson<FeaturedQuery>(`/featured/${encodeURIComponent(slug)}`);
 }
 
-export async function fetchIngestibleList(): Promise<IngestibleMeta[]> {
-  return (await fetchJson<IngestibleMeta[]>("/ingestibles")) ?? [];
+export async function fetchNutrientList(): Promise<NutrientMeta[]> {
+  return (await fetchJson<NutrientMeta[]>("/nutrients")) ?? [];
 }
 
-export async function fetchIngestible(slug: string): Promise<Ingestible | null> {
-  return fetchJson<Ingestible>(`/ingestibles/${encodeURIComponent(slug)}`);
+export async function fetchNutrient(slug: string): Promise<Nutrient | null> {
+  return fetchJson<Nutrient>(`/nutrients/${encodeURIComponent(slug)}`);
 }

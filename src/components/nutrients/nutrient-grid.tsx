@@ -10,28 +10,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { IngestibleMeta } from "@/lib/content";
+import type { NutrientMeta } from "@/lib/content";
 
-function matchesIngestible(ingestible: IngestibleMeta, query: string) {
+function matchesNutrient(nutrient: NutrientMeta, query: string) {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return true;
 
-  const searchable = [ingestible.name, ingestible.prompt].join(" ");
+  const searchable = [nutrient.name, nutrient.prompt].join(" ");
 
   return searchable.toLowerCase().includes(normalizedQuery);
 }
 
-export function IngestibleGrid({
-  ingestibles,
+export function NutrientGrid({
+  nutrients,
 }: {
-  ingestibles: IngestibleMeta[];
+  nutrients: NutrientMeta[];
 }) {
   const [query, setQuery] = useState("");
 
-  const filteredIngestibles = useMemo(
+  const filteredNutrients = useMemo(
     () =>
-      ingestibles.filter((ingestible) => matchesIngestible(ingestible, query)),
-    [ingestibles, query],
+      nutrients.filter((nutrient) => matchesNutrient(nutrient, query)),
+    [nutrients, query],
   );
 
   return (
@@ -41,23 +41,23 @@ export function IngestibleGrid({
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search ingestibles..."
+          placeholder="Search nutrients..."
           className="h-11 border-2 border-gray-500 pl-9 placeholder:text-gray-300"
         />
       </div>
 
-      {filteredIngestibles.length > 0 ? (
+      {filteredNutrients.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredIngestibles.map((ingestible) => (
+          {filteredNutrients.map((nutrient) => (
             <Link
-              key={ingestible.slug}
-              href={`/ingestibles/${ingestible.slug}`}
+              key={nutrient.slug}
+              href={`/nutrients/${nutrient.slug}`}
               className="group"
             >
               <Card className="border-2 border-gray-500 bg-card/50 hover:border-primary hover:bg-card h-full cursor-pointer py-5 shadow-none transition-colors">
                 <CardHeader className="gap-2 px-5">
                   <CardTitle className="text-foreground/90 group-hover:text-foreground text-lg leading-snug">
-                    {ingestible.name}
+                    {nutrient.name}
                   </CardTitle>
                 </CardHeader>
                 <CardFooter className="px-5 pt-0">
@@ -71,7 +71,7 @@ export function IngestibleGrid({
         </div>
       ) : (
         <div className="border-border text-muted-foreground rounded-lg border border-dashed px-5 py-10 text-center text-sm">
-          No ingestibles match your search.
+          No nutrients match your search.
         </div>
       )}
     </div>

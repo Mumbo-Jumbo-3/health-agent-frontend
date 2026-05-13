@@ -409,7 +409,7 @@ export function Thread() {
                     <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
                       Root Cause
                     </h1>
-                    <p className="text-muted-foreground text-center text-base sm:text-lg">
+                    <p className="text-muted-foreground -mt-1 text-center text-base sm:-mt-2 sm:text-lg">
                       Get health knowledge from trusted sources
                     </p>
                   </div>

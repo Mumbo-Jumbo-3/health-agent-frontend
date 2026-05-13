@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/chat", label: "Chat", icon: MessageCircle },
-  { href: "/ingestibles", label: "Ingestibles", icon: Pill },
+  { href: "/nutrients", label: "Nutrients", icon: Pill },
   { href: "/sources", label: "Sources", icon: BookOpen },
 ];
 

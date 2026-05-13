@@ -290,7 +290,8 @@ export function Thread() {
           )}
           {threadId && (
             <TooltipIconButton
-              tooltip="Share conversation"
+              tooltip="Share"
+              tooltipClassName="text-base font-bold"
               variant="ghost"
               className="size-9 p-1.5"
               disabled={sharing}

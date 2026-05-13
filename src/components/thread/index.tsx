@@ -17,7 +17,6 @@ import { TooltipIconButton } from "./tooltip-icon-button";
 import {
   ArrowDown,
   Copy,
-  ExternalLink,
   History,
   LoaderCircle,
   Share2,
@@ -504,7 +503,7 @@ export function Thread() {
             />
           </div>
 
-          <SheetFooter className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <SheetFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
               type="button"
               onClick={handleCopyShareUrl}
@@ -524,21 +523,6 @@ export function Thread() {
                 Share
               </Button>
             )}
-            <Button
-              asChild
-              type="button"
-              variant="outline"
-              className="w-full"
-            >
-              <a
-                href={currentShareUrl ?? undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="size-4" />
-                Open
-              </a>
-            </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

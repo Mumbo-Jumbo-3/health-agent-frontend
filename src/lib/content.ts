@@ -17,6 +17,7 @@ export interface NutrientMeta {
   slug: string;
   name: string;
   prompt: string;
+  aliases?: string[];
 }
 
 export interface Nutrient extends NutrientMeta {

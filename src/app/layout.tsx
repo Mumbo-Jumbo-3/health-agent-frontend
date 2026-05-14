@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/ui/themes";
 import { clerkLocalization } from "@/lib/clerk-localization";
+import { NutrientLinksProvider } from "@/components/nutrient-links-provider";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -52,7 +53,9 @@ export default function RootLayout({
           signUpFallbackRedirectUrl="/chat"
         >
           <ThemeProvider attribute="class" defaultTheme="dark">
-            <NuqsAdapter>{children}</NuqsAdapter>
+            <NuqsAdapter>
+              <NutrientLinksProvider>{children}</NutrientLinksProvider>
+            </NuqsAdapter>
           </ThemeProvider>
         </ClerkProvider>
       </body>

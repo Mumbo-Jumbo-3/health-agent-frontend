@@ -6,12 +6,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
-import { FC, memo, useState } from "react";
+import { FC, memo, useMemo, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { SyntaxHighlighter } from "@/components/thread/syntax-highlighter";
 
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
 import { cn } from "@/lib/utils";
+import { useNutrientLinks } from "@/lib/nutrient-links-context";
+import { remarkNutrientLinks } from "@/lib/remark-nutrient-links";
 
 import "katex/dist/katex.min.css";
 
@@ -118,15 +122,43 @@ const defaultComponents: any = {
       {...props}
     />
   ),
-  a: ({ className, ...props }: { className?: string }) => (
-    <a
-      className={cn(
-        "text-primary font-medium underline underline-offset-4",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  a: ({
+    className,
+    href,
+    ...props
+  }: {
+    className?: string;
+    href?: string;
+  } & Record<string, unknown>) => {
+    const isNutrient =
+      typeof className === "string" && className.includes("nutrient-link");
+    const isInternal = typeof href === "string" && href.startsWith("/");
+
+    if (isInternal && href) {
+      return (
+        <Link
+          href={href}
+          className={cn(
+            "text-primary font-medium",
+            isNutrient ? "" : "underline underline-offset-4",
+            className,
+          )}
+          {...props}
+        />
+      );
+    }
+
+    return (
+      <a
+        href={href}
+        className={cn(
+          "text-primary font-medium underline underline-offset-4",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
   blockquote: ({ className, ...props }: { className?: string }) => (
     <blockquote
       className={cn("border-l-2 pl-6 italic", className)}
@@ -244,10 +276,29 @@ const defaultComponents: any = {
 };
 
 const MarkdownTextImpl: FC<{ children: string }> = ({ children }) => {
+  const nutrients = useNutrientLinks();
+  const pathname = usePathname();
+  const skipSlug = useMemo(() => {
+    const m = pathname?.match(/^\/nutrients\/([^/]+)/);
+    return m?.[1];
+  }, [pathname]);
+
+  const remarkPlugins = useMemo(
+    () => [
+      remarkGfm,
+      remarkMath,
+      [remarkNutrientLinks, { nutrients, skipSlug }] as [
+        typeof remarkNutrientLinks,
+        { nutrients: typeof nutrients; skipSlug: typeof skipSlug },
+      ],
+    ],
+    [nutrients, skipSlug],
+  );
+
   return (
     <div className="markdown-content">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
+        remarkPlugins={remarkPlugins}
         rehypePlugins={[rehypeKatex]}
         components={defaultComponents}
       >

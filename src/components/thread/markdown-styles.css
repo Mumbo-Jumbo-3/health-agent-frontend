@@ -15,6 +15,16 @@
   text-decoration: underline;
 }
 
+.markdown-content a.nutrient-link {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, var(--primary) 65%, transparent);
+  text-underline-offset: 3px;
+}
+
+.markdown-content a.nutrient-link:hover {
+  text-decoration: underline solid;
+}
+
 .markdown-content blockquote {
   border-left: 4px solid var(--border);
   padding-left: 1rem;

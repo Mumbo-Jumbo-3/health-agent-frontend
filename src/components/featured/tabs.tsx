@@ -25,11 +25,10 @@ export function FeaturedTabs({
 }: FeaturedTabsProps) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-1 border-b border-border">
+      <div className="flex items-center justify-between border-b-2 border-gray-500">
         <button
           className={cn(
-            "px-4 py-2 text-sm font-medium transition-colors",
-            "border-b-2 border-primary text-foreground",
+            "px-2 py-2 text-sm font-medium whitespace-nowrap text-primary transition-colors sm:px-4",
           )}
         >
           Root Cause
@@ -43,7 +42,7 @@ export function FeaturedTabs({
                 href={shareLinks[key]}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-1.5 px-2 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground sm:px-4"
               >
                 {label}
                 <ExternalLink className="size-3" />

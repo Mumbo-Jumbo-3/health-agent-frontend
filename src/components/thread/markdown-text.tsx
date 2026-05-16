@@ -179,7 +179,7 @@ const defaultComponents: any = {
   ),
   hr: ({ className, ...props }: { className?: string }) => (
     <hr
-      className={cn("my-5 border-b", className)}
+      className={cn("my-5 border-b border-gray-500", className)}
       {...props}
     />
   ),

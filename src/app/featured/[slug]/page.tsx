@@ -26,7 +26,7 @@ export default async function FeaturedPage({ params }: PageProps) {
 
   return (
     <AppShell mainClassName="overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pb-3">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 pt-14 pb-3 sm:pt-8">
         <FeaturedTabs
           responseMarkdown={query.response_markdown}
           shareLinks={query.shareLinks}
